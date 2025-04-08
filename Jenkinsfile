@@ -18,7 +18,7 @@ pipeline {
         stage('Get Code') {
             steps {
                 echo 'Getting code from GitHub'
-                git url: 'https://github.com/shrifzain/infra.git', branch: 'master' ,credentialsId: '01143717'  // Pulls from main branch
+                git url: 'https://github.com/shrifzain/ApiNet.git', branch: 'master' ,credentialsId: '01143717'  // Pulls from main branch
                 sh 'ls -la'  // Debug: See what files are here
                 sh 'find . -name "*.csproj"'  // Debug: Find the project file
             }
