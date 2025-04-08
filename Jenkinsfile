@@ -9,7 +9,7 @@ pipeline {
         S3_BUCKET = 'pronet-artifacts'
         DEV_SERVER = '18.208.180.111'
         SSH_KEY_ID = 'sheraa-ssh-key'
-        AWS_KEY_ID = '01143717'
+        AWS_KEY_ID = 'awss'
     }
     
     stages {
