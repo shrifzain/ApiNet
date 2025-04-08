@@ -43,11 +43,12 @@ pipeline {
             steps {
                 echo 'Sending app to EC2'
                 withCredentials([sshUserPrivateKey(credentialsId: "${SSH_KEY_ID}", keyFileVariable: 'SSH_KEY')]) {
-                    sh 'echo "SSH_KEY path: $SSH_KEY"'  // Debug: Verify key path
+                    sh 'echo "SSH_KEY path: $SSH_KEY"'  // Debug: Show key file path
+                    sh 'ls -l $SSH_KEY'  // Debug: Check key file permissions
                     sh """
-                        ssh -i \$SSH_KEY -o StrictHostKeyChecking=no ubuntu@${DEV_SERVER} 'mkdir -p /home/ubuntu/app'
+                        ssh -i \$SSH_KEY -v -o StrictHostKeyChecking=no ubuntu@${DEV_SERVER} 'mkdir -p /home/ubuntu/app'
                         scp -i \$SSH_KEY -o StrictHostKeyChecking=no ${PUBLISH_DIR}/* ubuntu@${DEV_SERVER}:/home/ubuntu/app/
-                        ssh -i \$SSH_KEY -o StrictHostKeyChecking=no ubuntu@${DEV_SERVER} 'cd /home/ubuntu/app && nohup dotnet ProNet.Api.dll &'
+                        ssh -i \$SSH_KEY -v -o StrictHostKeyChecking=no ubuntu@${DEV_SERVER} 'cd /home/ubuntu/app && nohup dotnet ProNet.Api.dll &'
                     """
                 }
             }
