@@ -7,7 +7,7 @@ pipeline {
         PUBLISH_DIR = 'publish'
         GITHUB_REPO = 'https://github.com/shrifzain/ApiNet.git'
         S3_BUCKET = 'pronet-artifacts'
-        DEV_SERVER = '13.219.93.102
+        DEV_SERVER = '13.219.93.102'
 '
         SSH_KEY_ID = 'sheraa-ssh-key'
         AWS_KEY_ID = 'awss'
