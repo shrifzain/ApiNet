@@ -3,7 +3,7 @@ pipeline {
     
     environment {
         PROJECT_NAME = 'ProNet.Api'
-        SOLUTION_FILE = 'ApiNet.csproj'  // We’ll verify if this is correct
+        SOLUTION_FILE = 'Api.csproj'  // We’ll verify if this is correct
         PUBLISH_DIR = 'publish'
         GITHUB_REPO = 'https://github.com/shrifzain/ApiNet.git'
         S3_BUCKET = 'pronet-artifacts'
