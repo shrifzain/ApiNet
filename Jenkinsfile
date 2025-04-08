@@ -6,7 +6,7 @@ pipeline {
         PROJECT_NAME = 'ProNet.Api'              // Your app name
         SOLUTION_FILE = 'Api/Api.csproj'         // Your project file
         PUBLISH_DIR = 'publish'                  // Where the built app goes
-        GITHUB_REPO = 'https://github.com/shrifzain/pronet.git'  // Your GitHub repo
+        GITHUB_REPO = 'https://github.com/shrifzain/ApiNet.git'  // Your GitHub repo
         S3_BUCKET = 'pronet-artifacts'           // Your S3 bucket
         DEV_SERVER = '18.208.180.111'       // Your EC2 IP (replace this)
         SSH_KEY_ID = 'sheraa-ssh-key'            // Your SSH key in Jenkins
