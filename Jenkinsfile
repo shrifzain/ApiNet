@@ -58,7 +58,9 @@ pipeline {
                     cat target_server.txt  # Debug: Show the value
                 '''
                 // Set TARGET_SERVER globally
-                sh "echo 'TARGET_SERVER=$(cat target_server.txt)' > env_vars"
+                sh '''
+                    echo "TARGET_SERVER=$(cat target_server.txt)" > env_vars
+                '''
                 load 'env_vars'
                 echo "TARGET_SERVER set to: ${env.TARGET_SERVER}"
             }
