@@ -48,11 +48,11 @@ pipeline {
                     def targetServer = inactiveEnv == 'blue' ? env.BLUE_SERVER : env.GREEN_SERVER
                     
                     echo "Deploying to ${inactiveEnv} (${targetServer})"
-                    // Use withCredentials to securely access the SSH key
                     withCredentials([sshUserPrivateKey(credentialsId: "${SSH_KEY_ID}", keyFileVariable: 'SSH_KEY')]) {
                         sh """
-                            scp -i ${SSH_KEY} -o StrictHostKeyChecking=no ${PUBLISH_DIR}/* ubuntu@${targetServer}:/home/ubuntu/app/
-                            ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no ubuntu@${targetServer} '
+                            ssh -i \$SSH_KEY -v -o StrictHostKeyChecking=no ubuntu@${targetServer} 'mkdir -p /home/ubuntu/app'
+                            scp -i \$SSH_KEY -o StrictHostKeyChecking=no ${PUBLISH_DIR}/* ubuntu@${targetServer}:/home/ubuntu/app/
+                            ssh -i \$SSH_KEY -v -o StrictHostKeyChecking=no ubuntu@${targetServer} '
                                 sudo systemctl daemon-reload
                                 sudo systemctl enable pronet-api.service
                                 sudo systemctl restart pronet-api.service
