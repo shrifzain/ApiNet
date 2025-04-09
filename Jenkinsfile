@@ -12,7 +12,6 @@ pipeline {
         SSH_KEY_ID = 'sheraa-ssh-key'            // Jenkins credential ID for SSH key
         AWS_KEY_ID = 'awss'                      // AWS credential ID
         ACTIVE_ENV = 'blue'                      // Initial active environment
-        TARGET_SERVER = ''                       // Placeholder for target server, set later
     }
 
     stages {
@@ -45,17 +44,39 @@ pipeline {
         stage('Choose Inactive Server') {
             steps {
                 script {
+                    // Explicitly set the target server variable
                     def inactiveEnv = env.ACTIVE_ENV == 'blue' ? 'green' : 'blue'
-                    env.TARGET_SERVER = inactiveEnv == 'blue' ? env.BLUE_SERVER : env.GREEN_SERVER
-                    echo "Selected inactive environment: ${inactiveEnv} (${env.TARGET_SERVER})"
+                    
+                    // Use direct reference to avoid null issue
+                    if (inactiveEnv == 'blue') {
+                        env.TARGET_SERVER = BLUE_SERVER
+                    } else {
+                        env.TARGET_SERVER = GREEN_SERVER
+                    }
+                    
+                    // Debug output to verify the value
+                    echo "Selected inactive environment: ${inactiveEnv}"
+                    echo "Target server IP: ${env.TARGET_SERVER}"
                 }
             }
         }
 
         stage('Deploy to Server') {
             steps {
+                script {
+                    // Double-check that TARGET_SERVER is set
+                    if (env.TARGET_SERVER == null || env.TARGET_SERVER.trim() == '') {
+                        error "TARGET_SERVER is not set! Cannot proceed with deployment."
+                    }
+                    
+                    echo "Deploying to server: ${env.TARGET_SERVER}"
+                }
+                
                 withCredentials([sshUserPrivateKey(credentialsId: "${SSH_KEY_ID}", keyFileVariable: 'SSH_KEY')]) {
                     sh """
+                        # Verify target server is set
+                        echo "Deploying to: ${env.TARGET_SERVER}"
+                        
                         # Create app directory
                         ssh -i \$SSH_KEY -o StrictHostKeyChecking=no ubuntu@${env.TARGET_SERVER} 'mkdir -p /home/ubuntu/app'
                         
