@@ -44,25 +44,31 @@ pipeline {
         
         stage('Choose Inactive Server') {
             steps {
-                script {
-                    def inactiveEnv = env.ACTIVE_ENV == 'blue' ? 'green' : 'blue'
-                    env.TARGET_SERVER = inactiveEnv == 'blue' ? env.BLUE_SERVER : env.GREEN_SERVER
-                    echo "Selected inactive environment: ${inactiveEnv} (${env.TARGET_SERVER})"
-                }
+                echo 'Choosing inactive environment'
+                sh '''
+                    if [ "$ACTIVE_ENV" = "blue" ]; then
+                        echo "Selected inactive environment: green (${GREEN_SERVER})"
+                        echo "TARGET_SERVER=${GREEN_SERVER}" > env_vars
+                    else
+                        echo "Selected inactive environment: blue (${BLUE_SERVER})"
+                        echo "TARGET_SERVER=${BLUE_SERVER}" > env_vars
+                    fi
+                '''
+                // Inject the environment variable from the file
+                load 'env_vars'
             }
         }
         
-
-     stage('Deploy to Dev') {
+        stage('Deploy to Dev') {
             steps {
                 echo 'Sending app to EC2'
                 withCredentials([sshUserPrivateKey(credentialsId: "${SSH_KEY_ID}", keyFileVariable: 'SSH_KEY')]) {
                     sh 'echo "SSH_KEY path: $SSH_KEY"'  // Debug: Show key file path
-                    sh 'ls -l $SSH_KEY'  // Debug: Check key file permissions
+                    sh 'ls -l $SSH_KEY'                 // Debug: Check key file permissions
                     sh """
-                        ssh -i \$SSH_KEY -v -o StrictHostKeyChecking=no ubuntu@${TARGET_SERVER} 'mkdir -p /home/ubuntu/app'
-                        scp -i \$SSH_KEY -o StrictHostKeyChecking=no ${PUBLISH_DIR}/* ubuntu@${TARGET_SERVER}:/home/ubuntu/app/
-                        ssh -i \$SSH_KEY -v -o StrictHostKeyChecking=no ubuntu@${TARGET_SERVER} 'cd /home/ubuntu/app && nohup dotnet ProNet.Api.dll &'
+                        ssh -i \$SSH_KEY -v -o StrictHostKeyChecking=no ubuntu@\${TARGET_SERVER} 'mkdir -p /home/ubuntu/app'
+                        scp -i \$SSH_KEY -o StrictHostKeyChecking=no ${PUBLISH_DIR}/* ubuntu@\${TARGET_SERVER}:/home/ubuntu/app/
+                        ssh -i \$SSH_KEY -v -o StrictHostKeyChecking=no ubuntu@\${TARGET_SERVER} 'cd /home/ubuntu/app && nohup dotnet ProNet.Api.dll &'
                     """
                 }
             }
