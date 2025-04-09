@@ -57,10 +57,10 @@ pipeline {
                     fi
                     cat target_server.txt  # Debug: Show the value
                 '''
-                // Set TARGET_SERVER using withEnv
-                withEnv(["TARGET_SERVER=${sh(script: 'cat target_server.txt', returnStdout: true).trim()}"]) {
-                    echo "TARGET_SERVER set to: ${env.TARGET_SERVER}"
-                }
+                // Set TARGET_SERVER globally
+                sh "echo 'TARGET_SERVER=$(cat target_server.txt)' > env_vars"
+                load 'env_vars'
+                echo "TARGET_SERVER set to: ${env.TARGET_SERVER}"
             }
         }
         
