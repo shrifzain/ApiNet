@@ -44,14 +44,17 @@ pipeline {
         stage('Choose Inactive Server') {
             steps {
                 script {
+                    // Explicitly set the target server variable
                     def inactiveEnv = env.ACTIVE_ENV == 'blue' ? 'green' : 'blue'
                     
+                    // Use direct reference to avoid null issue
                     if (inactiveEnv == 'blue') {
                         env.TARGET_SERVER = BLUE_SERVER
                     } else {
                         env.TARGET_SERVER = GREEN_SERVER
                     }
                     
+                    // Debug output to verify the value
                     echo "Selected inactive environment: ${inactiveEnv}"
                     echo "Target server IP: ${env.TARGET_SERVER}"
                 }
@@ -61,6 +64,7 @@ pipeline {
         stage('Deploy to Server') {
             steps {
                 script {
+                    // Double-check that TARGET_SERVER is set
                     if (env.TARGET_SERVER == null || env.TARGET_SERVER.trim() == '') {
                         error "TARGET_SERVER is not set! Cannot proceed with deployment."
                     }
@@ -70,41 +74,27 @@ pipeline {
                 
                 withCredentials([sshUserPrivateKey(credentialsId: "${SSH_KEY_ID}", keyFileVariable: 'SSH_KEY')]) {
                     sh """
-                        # Create app directory (should already exist from Terraform, but ensure it's there)
+                        # Verify target server is set
+                        echo "Deploying to: ${env.TARGET_SERVER}"
+                        
+                        # Create app directory
                         ssh -i \$SSH_KEY -o StrictHostKeyChecking=no ubuntu@${env.TARGET_SERVER} 'mkdir -p /home/ubuntu/app'
                         
-                        # Copy application files
+                        # Copy files
                         scp -i \$SSH_KEY -o StrictHostKeyChecking=no -r ${PUBLISH_DIR}/* ubuntu@${env.TARGET_SERVER}:/home/ubuntu/app/
                         
-                        # First verify that the service file exists
+                        # Restart service
                         ssh -i \$SSH_KEY -o StrictHostKeyChecking=no ubuntu@${env.TARGET_SERVER} '
-                            if [ ! -f /etc/systemd/system/pronet-api.service ]; then
-                                echo "Service file does not exist. Check Terraform setup."
-                                exit 1
-                            fi
-                            
-                            # Ensure correct permissions
-                            sudo chmod 644 /etc/systemd/system/pronet-api.service
-                            
-                            # Reload and start service
-                            sudo systemctl daemon-reload
-                            sudo systemctl enable pronet-api.service
-                            sudo systemctl restart pronet-api.service
-                            sudo systemctl status pronet-api.service --no-pager || true  # Don't fail on status
+                            sudo systemctl daemon-reload || { echo "daemon-reload failed"; exit 1; }
+                            sudo systemctl enable pronet-api.service || { echo "enable failed"; exit 1; }
+                            sudo systemctl restart pronet-api.service || { echo "restart failed"; exit 1; }
+                            sudo systemctl status pronet-api.service --no-pager || { echo "status failed"; exit 1; }
                         '
                     """
                     
-                    // Health check with more tolerance
-                    sh """
-                        echo "Waiting for service to start..."
-                        sleep 20
-                        # Try multiple ports/endpoints in case your app doesn't use port 80
-                        for PORT in 80 5000 5001 8080; do
-                            echo "Checking health on port \$PORT..."
-                            curl --connect-timeout 5 --max-time 10 --retry 3 --retry-delay 5 --fail http://${env.TARGET_SERVER}:\$PORT/ && exit 0 || echo "Not available on port \$PORT"
-                        done
-                        echo "Warning: Health check could not connect to service on standard ports. Please verify manually."
-                    """
+                    // Simple health check
+                    sh "sleep 10" // Give service time to start
+                    sh "curl --retry 3 --retry-delay 5 --fail http://${env.TARGET_SERVER}/ || exit 1"
                 }
             }
         }
@@ -112,8 +102,12 @@ pipeline {
         stage('Switch Traffic') {
             steps {
                 script {
+                    // Update the active environment for next deployment
                     env.ACTIVE_ENV = env.ACTIVE_ENV == 'blue' ? 'green' : 'blue'
                     echo "Traffic switched to new environment: ${env.TARGET_SERVER}"
+                    
+                    // Here you would typically update a load balancer, DNS, etc.
+                    // This is a placeholder for that logic
                     echo "Updated active environment to: ${env.ACTIVE_ENV}"
                 }
             }
