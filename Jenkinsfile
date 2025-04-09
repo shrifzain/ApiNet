@@ -46,16 +46,21 @@ pipeline {
             steps {
                 echo 'Choosing inactive environment'
                 sh '''
+                    set -e  # Exit on error
+                    echo "ACTIVE_ENV is: $ACTIVE_ENV"
                     if [ "$ACTIVE_ENV" = "blue" ]; then
                         echo "Selected inactive environment: green (${GREEN_SERVER})"
-                        echo "TARGET_SERVER=${GREEN_SERVER}" > env_vars
+                        echo "${GREEN_SERVER}" > target_server.txt
                     else
                         echo "Selected inactive environment: blue (${BLUE_SERVER})"
-                        echo "TARGET_SERVER=${BLUE_SERVER}" > env_vars
+                        echo "${BLUE_SERVER}" > target_server.txt
                     fi
+                    cat target_server.txt  # Debug: Show the value
                 '''
-                // Inject the environment variable from the file
-                load 'env_vars'
+                // Set TARGET_SERVER using withEnv
+                withEnv(["TARGET_SERVER=${sh(script: 'cat target_server.txt', returnStdout: true).trim()}"]) {
+                    echo "TARGET_SERVER set to: ${env.TARGET_SERVER}"
+                }
             }
         }
         
