@@ -56,9 +56,9 @@ pipeline {
             steps {
                 withCredentials([sshUserPrivateKey(credentialsId: "${SSH_KEY_ID}", keyFileVariable: 'SSH_KEY')]) {
                     sh """
-                        ssh -i \$SSH_KEY -v -o StrictHostKeyChecking=no ubuntu@${TARGET_SERVER} 'mkdir -p /home/ubuntu/app'
-                        scp -i \$SSH_KEY -o StrictHostKeyChecking=no ${PUBLISH_DIR}/* ubuntu@${TARGET_SERVER}:/home/ubuntu/app/
-                        ssh -i \$SSH_KEY -t -v -o StrictHostKeyChecking=no ubuntu@${TARGET_SERVER} '
+                        ssh -i \$SSH_KEY -v -o StrictHostKeyChecking=no ubuntu@${env.TARGET_SERVER} 'mkdir -p /home/ubuntu/app'
+                        scp -i \$SSH_KEY -o StrictHostKeyChecking=no ${PUBLISH_DIR}/* ubuntu@${env.TARGET_SERVER}:/home/ubuntu/app/
+                        ssh -i \$SSH_KEY -t -v -o StrictHostKeyChecking=no ubuntu@${env.TARGET_SERVER} '
                             sudo systemctl daemon-reload || { echo "daemon-reload failed"; exit 1; }
                             sudo systemctl enable pronet-api.service || { echo "enable failed"; exit 1; }
                             sudo systemctl restart pronet-api.service || { echo "restart failed"; exit 1; }
@@ -67,7 +67,7 @@ pipeline {
                     """
                     
                     // Simple health check
-                    sh "curl --fail http://${TARGET_SERVER}/ || exit 1"
+                    sh "curl --fail http://${env.TARGET_SERVER}/ || exit 1"
                 }
             }
         }
