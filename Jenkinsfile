@@ -3,13 +3,15 @@ pipeline {
     
     environment {
         PROJECT_NAME = 'ProNet.Api'
-        SOLUTION_FILE = 'Api.csproj'  // We’ll verify if this is correct
+        SOLUTION_FILE = 'Api.csproj'
         PUBLISH_DIR = 'publish'
         GITHUB_REPO = 'https://github.com/shrifzain/ApiNet.git'
         S3_BUCKET = 'pronet-artifacts'
-        DEV_SERVER = '13.219.93.102'
+        BLUE_SERVER = '54.152.102.169'  // Replace with Terraform output (e.g., 13.219.93.102)
+        GREEN_SERVER = '54.158.110.100'  // Replace with Terraform output
         SSH_KEY_ID = 'sheraa-ssh-key'
         AWS_KEY_ID = 'awss'
+        ACTIVE_ENV = 'blue'  // Start with blue as active
     }
     
     stages {
@@ -39,21 +41,28 @@ pipeline {
             }
         }
         
-        stage('Deploy to Dev') {
-            steps {
-                echo 'Sending app to EC2'
-                withCredentials([sshUserPrivateKey(credentialsId: "${SSH_KEY_ID}", keyFileVariable: 'SSH_KEY')]) {
-                    sh 'echo "SSH_KEY path: $SSH_KEY"'  // Debug: Show key file path
-                    sh 'ls -l $SSH_KEY'  // Debug: Check key file permissions
-                    sh """
-                        ssh -i \$SSH_KEY -v -o StrictHostKeyChecking=no ubuntu@${DEV_SERVER} 'mkdir -p /home/ubuntu/app'
-                        scp -i \$SSH_KEY -o StrictHostKeyChecking=no ${PUBLISH_DIR}/* ubuntu@${DEV_SERVER}:/home/ubuntu/app/
-                        ssh -i \$SSH_KEY -v -o StrictHostKeyChecking=no ubuntu@${DEV_SERVER} 'cd /home/ubuntu/app && nohup dotnet ProNet.Api.dll &'
-                    """
-                }
-            }
+stage('Deploy to Inactive Env') {
+    steps {
+        script {
+            def inactiveEnv = env.ACTIVE_ENV == 'blue' ? 'green' : 'blue'
+            def targetServer = inactiveEnv == 'blue' ? env.BLUE_SERVER : env.GREEN_SERVER
+            
+            echo "Deploying to ${inactiveEnv} (${targetServer})"
+            sh """
+                scp -i \$SSH_KEY -o StrictHostKeyChecking=no ${PUBLISH_DIR}/* ubuntu@${targetServer}:/home/ubuntu/app/
+                ssh -i \$SSH_KEY -o StrictHostKeyChecking=no ubuntu@${targetServer} '
+                    sudo systemctl daemon-reload
+                    sudo systemctl enable pronet-api.service
+                    sudo systemctl restart pronet-api.service
+                    sudo systemctl status pronet-api.service --no-pager
+                '
+            """
+            
+            // Simple health check
+            sh "curl --fail http://${targetServer}/ || exit 1"
         }
     }
+}
     
     post {
         always {
