@@ -7,11 +7,11 @@ pipeline {
         PUBLISH_DIR = 'publish'
         GITHUB_REPO = 'https://github.com/shrifzain/ApiNet.git'
         S3_BUCKET = 'pronet-artifacts'
-        BLUE_SERVER = '54.152.102.169'           // Blue instance IP
-        GREEN_SERVER = '54.158.110.100'          // Green instance IP
-        SSH_KEY_ID = 'sheraa-ssh-key'            // Jenkins credential ID for SSH key
-        AWS_KEY_ID = 'awss'                      // AWS credential ID
-        ACTIVE_ENV = 'blue'                      // Initial active environment
+        BLUE_SERVER = '54.152.102.169'
+        GREEN_SERVER = '54.158.110.100'
+        SSH_KEY_ID = 'sheraa-ssh-key'
+        AWS_KEY_ID = 'awss'
+        ACTIVE_ENV = 'blue'
     }
     
     stages {
@@ -52,11 +52,11 @@ pipeline {
                         sh """
                             ssh -i \$SSH_KEY -v -o StrictHostKeyChecking=no ubuntu@${targetServer} 'mkdir -p /home/ubuntu/app'
                             scp -i \$SSH_KEY -o StrictHostKeyChecking=no ${PUBLISH_DIR}/* ubuntu@${targetServer}:/home/ubuntu/app/
-                            ssh -i \$SSH_KEY -v -o StrictHostKeyChecking=no ubuntu@${targetServer} '
-                                sudo systemctl daemon-reload
-                                sudo systemctl enable pronet-api.service
-                                sudo systemctl restart pronet-api.service
-                                sudo systemctl status pronet-api.service --no-pager
+                            ssh -i \$SSH_KEY -t -v -o StrictHostKeyChecking=no ubuntu@${targetServer} '
+                                sudo systemctl daemon-reload || { echo "daemon-reload failed"; exit 1; }
+                                sudo systemctl enable pronet-api.service || { echo "enable failed"; exit 1; }
+                                sudo systemctl restart pronet-api.service || { echo "restart failed"; exit 1; }
+                                sudo systemctl status pronet-api.service --no-pager || { echo "status failed"; exit 1; }
                             '
                         """
                     }
