@@ -3,7 +3,7 @@ var app = builder.Build();
 
 app.MapGet("/api/hello", () => 
 {
-    return Results.Ok(new { Message = "Hello World from .NET 6! cae" });
+    return Results.Ok(new { Message = "Hello World from .NEkkT 6! cae" });
 });
 
 app.Run();
