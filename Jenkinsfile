@@ -31,6 +31,14 @@ pipeline {
                 sh "dotnet publish ${SOLUTION_FILE} -c Release -o ${PUBLISH_DIR}"
             }
         }
+       stage('Run Tests & Collect Coverage') {
+           steps {
+              echo 'Running unit tests with coverage'
+              sh 'dotnet test ProNet.Api.Tests/ProNet.Api.Tests.csproj --collect:"XPlat Code Coverage" --logger:trx'
+             sh 'reportgenerator -reports:**/coverage.cobertura.xml -targetdir:coverage-report -reporttypes:Html'
+                }
+         }
+
 
         stage('Save to S3') {
             steps {
