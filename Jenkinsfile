@@ -99,20 +99,7 @@ pipeline {
             }
         }
         
-        stage('Switch Traffic') {
-            steps {
-                script {
-                    // Update the active environment for next deployment
-                    env.ACTIVE_ENV = env.ACTIVE_ENV == 'blue' ? 'green' : 'blue'
-                    echo "Traffic switched to new environment: ${env.TARGET_SERVER}"
-                    
-                    // Here you would typically update a load balancer, DNS, etc.
-                    // This is a placeholder for that logic
-                    echo "Updated active environment to: ${env.ACTIVE_ENV}"
-                }
-            }
-        }
-    }
+    
 
     post {
         always {
